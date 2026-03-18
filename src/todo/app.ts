@@ -20,9 +20,6 @@ interface AppState {
 	editingId: number | null
 }
 
-// ---------------------------------------------------------------------------
-// Store
-// ---------------------------------------------------------------------------
 
 const store = new Store<AppState>({
 	todos: [],
@@ -30,9 +27,6 @@ const store = new Store<AppState>({
 	editingId: null,
 })
 
-// ---------------------------------------------------------------------------
-// Router
-// ---------------------------------------------------------------------------
 
 const router = new Router()
 
@@ -41,15 +35,11 @@ router
 	.on('/active', () => store.setState({ filter: 'active' }))
 	.on('/completed', () => store.setState({ filter: 'completed' }))
 
-// ---------------------------------------------------------------------------
-// Unique id counter
-// ---------------------------------------------------------------------------
 
 let nextId = 1
 
-// ---------------------------------------------------------------------------
-// Render helpers
-// ---------------------------------------------------------------------------
+
+
 
 function renderTodoItem(todo: Todo, editingId: number | null): VNode {
 	const isEditing = editingId === todo.id
@@ -266,11 +256,10 @@ function renderApp(state: AppState): VNode {
 	)
 }
 
-// ---------------------------------------------------------------------------
-// App initialisation
-// ---------------------------------------------------------------------------
 
-export function initApp(container: Element): void {
+
+
+function initApp(container: Element): void {
 	let currentVNode: VNode | null = null
 
 	function render(): void {
@@ -311,9 +300,6 @@ export function initApp(container: Element): void {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Bootstrap
-// ---------------------------------------------------------------------------
 
 const container = document.getElementById('app')!
 initApp(container)

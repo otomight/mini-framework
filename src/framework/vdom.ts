@@ -145,14 +145,13 @@ export function patch(
 		return
 	}
 
-	// Both are VNodes
 	// Tag mismatch: replace entirely
 	if (oldVNode.tag !== newVNode.tag) {
 		replaceWith(container, oldEl as Element, newVNode)
 		return
 	}
 
-	// Same tag: patch in place
+	// Same tag
 	const el = oldEl as Element
 	newVNode.el = el
 
@@ -186,10 +185,8 @@ export function patch(
 	patchChildren(el, oldVNode.children, newVNode.children)
 }
 
-/**
- * Find the first text node in container whose data matches text.
- * Used as a fallback; patchAt handles text nodes via indexed child nodes.
- */
+// Find the first text node in container whose data matches text.
+// Used as a fallback; patchAt handles text nodes via indexed child nodes.
 function findTextNode(container: Element, text: string): Text | null {
 	for (const child of Array.from(container.childNodes)) {
 		if (child.nodeType === Node.TEXT_NODE && (child as Text).data === text) {
@@ -227,9 +224,7 @@ function patchChildren(
 	}
 }
 
-/**
- * Patch child at index `i` of `parent`.
- */
+// Patch child at index of parent.
 function patchAt(
 	parent: Element,
 	index: number,
