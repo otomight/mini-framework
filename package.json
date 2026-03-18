@@ -1,0 +1,19 @@
+{
+  "name": "mini-framework",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "todomvc-app-css": "^2.4.3",
+    "todomvc-common": "^1.0.5"
+  }
+}
