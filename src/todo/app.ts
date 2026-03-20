@@ -1,12 +1,7 @@
-// TodoMVC application built with mini-framework
-
 import { h, mount as mountVNode, patch, VNode } from '../framework/vdom'
 import { Store } from '../framework/store'
 import { Router } from '../framework/router'
 
-// ---------------------------------------------------------------------------
-// State types
-// ---------------------------------------------------------------------------
 
 interface Todo {
 	id: number
@@ -44,7 +39,7 @@ let nextId = 1
 function renderTodoItem(todo: Todo, editingId: number | null): VNode {
 	const isEditing = editingId === todo.id
 	const classes = [
-		'todo',
+		'',
 		todo.completed ? 'completed' : '',
 		isEditing ? 'editing' : '',
 	]
@@ -53,77 +48,29 @@ function renderTodoItem(todo: Todo, editingId: number | null): VNode {
 
 	return h(
 		'li',
-		{ class: classes },
+		{ class: classes, 'data-id': todo.id },
 		null,
 		h(
 			'div',
 			{ class: 'view' },
 			null,
-			h('input', { class: 'toggle', type: 'checkbox', checked: todo.completed }, {
-				change: () => {
-					store.setState((s) => ({
-						todos: s.todos.map((t) =>
-							t.id === todo.id ? { ...t, completed: !t.completed } : t
-						),
-					}))
-				},
-			}),
-			h(
-				'label',
-				{},
-				{
-					dblclick: () => {
-						store.setState({ editingId: todo.id })
-					},
-				},
-				todo.text
-			),
-			h('button', { class: 'destroy' }, {
-				click: () => {
-					store.setState((s) => ({
-						todos: s.todos.filter((t) => t.id !== todo.id),
-					}))
-				},
-			})
+			h('input', { class: 'toggle', type: 'checkbox', checked: todo.completed }, null),
+			h('label', {}, null, todo.text),
+			h('button', { class: 'destroy' }, null)
 		),
-		h('input', { class: 'edit', value: todo.text }, {
-			blur: (e: Event) => {
-				const input = e.target as HTMLInputElement
-				const text = input.value.trim()
-				store.setState((s) => ({
-					editingId: null,
-					todos: text
-						? s.todos.map((t) => (t.id === todo.id ? { ...t, text } : t))
-						: s.todos.filter((t) => t.id !== todo.id),
-				}))
-			},
-			keydown: (e: Event) => {
-				const ke = e as KeyboardEvent
-				if (ke.key === 'Enter') {
-					const input = ke.target as HTMLInputElement
-					const text = input.value.trim()
-					store.setState((s) => ({
-						editingId: null,
-						todos: text
-							? s.todos.map((t) => (t.id === todo.id ? { ...t, text } : t))
-							: s.todos.filter((t) => t.id !== todo.id),
-					}))
-				} else if (ke.key === 'Escape') {
-					store.setState({ editingId: null })
-				}
-			},
-		})
+		...(isEditing ? [h('input', { class: 'edit', value: todo.text }, null)] : [])
 	)
 }
 
-function renderApp(state: AppState): VNode {
+
+function renderApp(state: AppState): VNode[] {
 	const { todos, filter, editingId } = state
 
 	const filteredTodos = todos.filter((t) => {
 		if (filter === 'active') return !t.completed
 		if (filter === 'completed') return t.completed
 		return true
-	})
+	}).reverse()
 
 	const activeCount = todos.filter((t) => !t.completed).length
 	const completedCount = todos.filter((t) => t.completed).length
@@ -132,19 +79,71 @@ function renderApp(state: AppState): VNode {
 	const todoItems = filteredTodos.map((t) => renderTodoItem(t, editingId))
 
 	const mainSection = h(
-		'section',
-		{ class: 'main', hidden: todos.length === 0 ? true : undefined },
+		'main',
+		{ class: 'main', style: todos.length === 0 ? 'display: none;' : 'display: block;' },
 		null,
-		h('input', { id: 'toggle-all', class: 'toggle-all', type: 'checkbox', checked: allCompleted }, {
-			change: () => {
-				const targetCompleted = !allCompleted
+		h(
+			'div',
+			{ class: 'toggle-all-container' },
+			null,
+			h('input', { class: 'toggle-all', type: 'checkbox', checked: allCompleted }, null),
+			h('label', { class: 'toggle-all-label', for: 'toggle-all' }, {
+				click: () => {
+					const targetCompleted = !allCompleted
+					store.setState((s) => ({
+						todos: s.todos.map((t) => ({ ...t, completed: targetCompleted })),
+					}))
+				},
+			}, 'Mark all as complete'),
+		),
+		h('ul', { class: 'todo-list' }, {
+			change: (e: Event) => {
+				if (!(e.target as Element).matches('.toggle')) return
+				const id = Number((e.target as Element).closest('li')!.getAttribute('data-id'))
 				store.setState((s) => ({
-					todos: s.todos.map((t) => ({ ...t, completed: targetCompleted })),
+					todos: s.todos.map((t) => t.id === id ? { ...t, completed: !t.completed } : t),
 				}))
 			},
-		}),
-		h('label', { for: 'toggle-all' }, null, 'Mark all as complete'),
-		h('ul', { class: 'todo-list' }, null, ...todoItems)
+			dblclick: (e: Event) => {
+				if (!(e.target as Element).matches('label')) return
+				const id = Number((e.target as Element).closest('li')!.getAttribute('data-id'))
+				store.setState({ editingId: id })
+			},
+			click: (e: Event) => {
+				if (!(e.target as Element).matches('.destroy')) return
+				const id = Number((e.target as Element).closest('li')!.getAttribute('data-id'))
+				store.setState((s) => ({ todos: s.todos.filter((t) => t.id !== id) }))
+			},
+			focusout: (e: Event) => {
+				if (!(e.target as Element).matches('.edit')) return
+				const input = e.target as HTMLInputElement
+				const id = Number(input.closest('li')!.getAttribute('data-id'))
+				const text = input.value.trim()
+				store.setState((s) => ({
+					editingId: null,
+					todos: text
+						? s.todos.map((t) => (t.id === id ? { ...t, text } : t))
+						: s.todos.filter((t) => t.id !== id),
+				}))
+			},
+			keydown: (e: Event) => {
+				if (!(e.target as Element).matches('.edit')) return
+				const ke = e as KeyboardEvent
+				const input = ke.target as HTMLInputElement
+				const id = Number(input.closest('li')!.getAttribute('data-id'))
+				if (ke.key === 'Enter') {
+					const text = input.value.trim()
+					store.setState((s) => ({
+						editingId: null,
+						todos: text
+							? s.todos.map((t) => (t.id === id ? { ...t, text } : t))
+							: s.todos.filter((t) => t.id !== id),
+					}))
+				} else if (ke.key === 'Escape') {
+					store.setState({ editingId: null })
+				}
+			},
+		}, ...todoItems)
 	)
 
 	const clearBtn = h(
@@ -162,7 +161,7 @@ function renderApp(state: AppState): VNode {
 
 	const footerSection = h(
 		'footer',
-		{ class: 'footer', hidden: todos.length === 0 ? true : undefined },
+		{ class: 'footer', style: todos.length === 0 ? 'display: none;' : 'display: block;' },
 		null,
 		h(
 			'span',
@@ -234,10 +233,7 @@ function renderApp(state: AppState): VNode {
 		})
 	)
 
-	return h(
-		'div',
-		{},
-		null,
+	return [
 		h(
 			'section',
 			{ class: 'todoapp' },
@@ -252,34 +248,37 @@ function renderApp(state: AppState): VNode {
 			null,
 			h('p', {}, null, 'Double-click to edit a todo'),
 			h('p', {}, null, 'Created with mini-framework')
-		)
-	)
+		),
+	]
 }
 
 
 
 
 function initApp(container: Element): void {
-	let currentVNode: VNode | null = null
+	let currentVNodes: VNode[] = []
 
 	function render(): void {
 		const state = store.getState()
-		const newVNode = renderApp(state)
+		const newVNodes = renderApp(state)
 
-		if (currentVNode === null) {
-			mountVNode(newVNode, container)
+		if (currentVNodes.length === 0) {
+			for (const vnode of newVNodes) {
+				mountVNode(vnode, container)
+			}
 		} else {
-			patch(container, currentVNode, newVNode)
+			for (let i = 0; i < newVNodes.length; i++) {
+				patch(container, currentVNodes[i], newVNodes[i])
+			}
 		}
 
-		currentVNode = newVNode
+		currentVNodes = newVNodes
 
 		// After re-render, focus the edit input for the todo being edited
 		if (state.editingId !== null) {
-			const editInput = document.querySelector<HTMLInputElement>('.todo.editing .edit')
+			const editInput = document.querySelector<HTMLInputElement>('li.editing .edit')
 			if (editInput) {
 				editInput.focus()
-				// Place cursor at end of text
 				const len = editInput.value.length
 				editInput.setSelectionRange(len, len)
 			}
@@ -295,11 +294,11 @@ function initApp(container: Element): void {
 	router.start()
 
 	// If the router didn't trigger a render (e.g. no matching route), render now
-	if (currentVNode === null) {
+	if (currentVNodes.length === 0) {
 		render()
 	}
 }
 
-
-const container = document.getElementById('app')!
+const container = document.body!
+container.className = "learn-bar"
 initApp(container)
