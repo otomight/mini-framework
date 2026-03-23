@@ -12,7 +12,6 @@ export class EventBus {
 		if (!this.channels.has(event)) {
 			this.channels.set(event, new Set())
 		}
-		// Cast: the internal set stores Handler<unknown>, which is safe for emission
 		const set = this.channels.get(event)! as Set<Handler<unknown>>
 		const h = handler as Handler<unknown>
 		set.add(h)
